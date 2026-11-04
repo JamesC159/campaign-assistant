@@ -1,0 +1,19 @@
+# env
+.env
+.env.*
+!.env.example
+
+# build output
+/bin/
+/data/
+frontend/dist/
+coverage/
+
+# deps
+node_modules/
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/
+*.swp

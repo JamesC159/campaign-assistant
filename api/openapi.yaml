@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: Campaign Assistant API
+  version: 0.1.0
+  description: |
+    Contract between the Go backend and the React frontend.
+    Frontend types are generated from this file (`make gen`); Go response
+    structs mirror it by hand and are covered by handler tests.
+servers:
+  - url: /
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Service and dependency health
+      description: Returns 200 when every dependency is up, 503 (same body) when degraded.
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+        "503":
+          description: One or more dependencies are down
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, version, env, provider, database]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+        env:
+          type: string
+          enum: [dev, prod]
+        provider:
+          type: string
+          enum: [mock, aws]
+          description: Whether external services are real AWS clients or local mocks.
+        database:
+          $ref: "#/components/schemas/ComponentHealth"
+    ComponentHealth:
+      type: object
+      required: [status, latency_ms]
+      properties:
+        status:
+          type: string
+          enum: [up, down]
+        latency_ms:
+          type: integer
+          format: int64
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Stable machine-readable code, e.g. not_found
+            message:
+              type: string

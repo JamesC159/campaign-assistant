@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Twenty-sided die silhouette: an original, simple geometric mark. -->
+  <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="#5b3fa8"/>
+  <polygon points="16,8 24,21 8,21" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M16 2 16 8 M29 9.5 24 21 M3 9.5 8 21 M16 30 8 21 M16 30 24 21 M3 9.5 16 8 M29 9.5 16 8" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.1" fill="none"/>
+</svg>
