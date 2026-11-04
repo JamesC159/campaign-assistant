@@ -35,6 +35,12 @@ type Config struct {
 	Provider        Provider
 	AWSRegion       string
 	ShutdownTimeout time.Duration
+
+	// Bedrock model or inference-profile IDs, required when PROVIDER=aws.
+	// Strong handles extraction and contradiction checks; Fast handles recaps and tiebreaks.
+	BedrockStrongModel string
+	BedrockFastModel   string
+	BedrockEmbedModel  string
 }
 
 // defaultDatabaseURL matches docker-compose.yml. Dev-only: prod must set DATABASE_URL (enforced in Load).
@@ -59,6 +65,10 @@ func Load(getenv func(string) string) (Config, error) {
 		Provider:        Provider(get("PROVIDER", string(ProviderMock))),
 		AWSRegion:       get("AWS_REGION", "us-east-1"),
 		ShutdownTimeout: 15 * time.Second,
+
+		BedrockStrongModel: get("BEDROCK_MODEL_STRONG", ""),
+		BedrockFastModel:   get("BEDROCK_MODEL_FAST", ""),
+		BedrockEmbedModel:  get("BEDROCK_MODEL_EMBED", "amazon.titan-embed-text-v2:0"),
 	}
 
 	switch cfg.Env {
@@ -71,6 +81,15 @@ func Load(getenv func(string) string) (Config, error) {
 	case ProviderMock, ProviderAWS:
 	default:
 		errs = append(errs, fmt.Errorf("PROVIDER must be %q or %q, got %q", ProviderMock, ProviderAWS, cfg.Provider))
+	}
+
+	if cfg.Provider == ProviderAWS {
+		if cfg.BedrockStrongModel == "" {
+			errs = append(errs, errors.New("BEDROCK_MODEL_STRONG is required when PROVIDER=aws"))
+		}
+		if cfg.BedrockFastModel == "" {
+			errs = append(errs, errors.New("BEDROCK_MODEL_FAST is required when PROVIDER=aws"))
+		}
 	}
 
 	if cfg.Env == EnvProd && cfg.Provider == ProviderMock {
