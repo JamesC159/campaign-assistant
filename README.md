@@ -32,7 +32,9 @@ Open http://127.0.0.1:5173. The header badge and the "System status" card show l
 
 ```bash
 make help            # every target
-make check           # lint + tests + generated-type drift + build (run before pushing)
+make check           # lint + tests + eval + generated-type drift + build (run before pushing)
+make eval            # score the canon pipeline on the eval campaign (mock by default)
+make canon-run       # run the pipeline and write canon, party view and recaps to data/canon-run
 make test            # Go tests (incl. real-Postgres migration tests) + Vitest
 make gen             # regenerate frontend/src/api/schema.d.ts after editing api/openapi.yaml
 make migrate-status  # applied vs pending migrations
@@ -47,10 +49,18 @@ api/openapi.yaml        API contract (source of truth for frontend types)
 backend/
   cmd/api               HTTP server
   cmd/migrate           migration CLI (up, status)
+  cmd/canon             run the canon pipeline over a campaign folder
+  cmd/eval              score the pipeline against testdata/eval-campaign/answer-key.json
   internal/config       env config; PROVIDER=mock|aws, prod refuses mocks
   internal/httpapi      routes, middleware (request ID, access log, panic recovery), handlers
   internal/migrate      advisory-locked, checksummed, transactional migrator
+  internal/llm          Model interface, Bedrock Converse adapter, fixture record/replay
+  internal/embed        Embedder interface, Titan adapter, offline hash embedder
+  internal/canon        the pipeline: notes → extract → resolve → visibility → contradictions → recaps
+  internal/eval         answer-key scoring (recall, merges, contradictions, secret leaks)
+  internal/providers    builds mock or AWS clients from config
   migrations/           NNNN_name.sql, embedded into the binaries
+  testdata/eval-campaign  5-session sample campaign with planted secrets and contradictions
 frontend/
   src/api               generated schema types + fetch client
   src/components        layout, status badge
@@ -65,6 +75,19 @@ All settings come from environment variables with local-dev defaults. Copy `.env
 
 - `PROVIDER=mock` (default) runs with no AWS account. `APP_ENV=prod` refuses `PROVIDER=mock`.
 - Migrations are forward-only. Never edit an applied migration; the migrator rejects checksum changes.
+
+## Canon pipeline
+
+Each session runs these steps. Nothing becomes canon until approved; the CLI and eval approve everything automatically.
+
+1. **Parse notes.** Text under a `## GM only` / `## GM notes` / `## Secrets` heading, or a paragraph starting `GM:`, `[GM]` or `Secret:`, is GM-only. Everything else is what happened at the table.
+2. **Extract** entities and facts (strong model, forced tool call). Every fact must quote the notes verbatim, or it is dropped. Facts quoted from GM-only text are forced to GM visibility.
+3. **Resolve** entities: exact name/alias match, then embedding similarity, then a model tiebreak for close calls (flagged for review when not high-confidence).
+4. **Visibility.** Players know a name only if it appears in party text and is linked to a name they already use. A second, unrelated name ("a hooded stranger") stays GM-only, so the party view never connects a disguise to the real identity. Model-written statements that reveal any part of a secret name are replaced by their verbatim quote.
+5. **Contradictions** are checked per entity against established canon (strong model).
+6. **Recaps.** The GM recap sees everything. The player recap sees only party-visible facts, never the raw notes. If it still mentions a secret, it is regenerated once, then replaced with a plain list.
+
+`PROVIDER=mock` uses `canon.HeuristicModel` and a hash embedder, so the pipeline runs with no AWS account. Its output is deliberately simple; the `mock` thresholds in the answer key guard the plumbing, and the `aws` thresholds measure real quality. Use `-record <dir>` / `-replay <dir>` on `cmd/eval` and `cmd/canon` to capture real Bedrock answers once and replay them offline.
 
 ## Endpoints so far
 

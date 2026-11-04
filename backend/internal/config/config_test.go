@@ -32,14 +32,19 @@ func TestLoadDefaults(t *testing.T) {
 
 func TestLoadOverrides(t *testing.T) {
 	cfg, err := Load(envFrom(map[string]string{
-		"APP_ENV":          "prod",
-		"PROVIDER":         "aws",
-		"DATABASE_URL":     "postgres://x",
-		"LOG_LEVEL":        "debug",
-		"SHUTDOWN_TIMEOUT": "3s",
+		"APP_ENV":              "prod",
+		"PROVIDER":             "aws",
+		"BEDROCK_MODEL_STRONG": "strong-id",
+		"BEDROCK_MODEL_FAST":   "fast-id",
+		"DATABASE_URL":         "postgres://x",
+		"LOG_LEVEL":            "debug",
+		"SHUTDOWN_TIMEOUT":     "3s",
 	}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.BedrockStrongModel != "strong-id" || cfg.BedrockFastModel != "fast-id" || cfg.BedrockEmbedModel == "" {
+		t.Errorf("bedrock models not loaded: %+v", cfg)
 	}
 	if cfg.Env != EnvProd || cfg.Provider != ProviderAWS || cfg.LogLevel != slog.LevelDebug || cfg.ShutdownTimeout != 3*time.Second {
 		t.Errorf("overrides not applied: %+v", cfg)
@@ -54,7 +59,8 @@ func TestLoadRejectsInvalid(t *testing.T) {
 		"bad env":          {map[string]string{"APP_ENV": "staging"}, "APP_ENV"},
 		"bad provider":     {map[string]string{"PROVIDER": "gcp"}, "PROVIDER"},
 		"mock in prod":     {map[string]string{"APP_ENV": "prod", "DATABASE_URL": "postgres://x"}, "not allowed"},
-		"prod needs db":    {map[string]string{"APP_ENV": "prod", "PROVIDER": "aws"}, "DATABASE_URL"},
+		"prod needs db":    {map[string]string{"APP_ENV": "prod", "PROVIDER": "aws", "BEDROCK_MODEL_STRONG": "s", "BEDROCK_MODEL_FAST": "f"}, "DATABASE_URL"},
+		"aws needs models": {map[string]string{"PROVIDER": "aws"}, "BEDROCK_MODEL_STRONG is required"},
 		"bad log level":    {map[string]string{"LOG_LEVEL": "loud"}, "LOG_LEVEL"},
 		"bad shutdown":     {map[string]string{"SHUTDOWN_TIMEOUT": "soon"}, "SHUTDOWN_TIMEOUT"},
 		"negative timeout": {map[string]string{"SHUTDOWN_TIMEOUT": "-1s"}, "SHUTDOWN_TIMEOUT"},

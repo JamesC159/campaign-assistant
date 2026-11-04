@@ -1,0 +1,79 @@
+{
+  "description": "Hand-written answer key for the Lantern Coast eval campaign. Names match case-insensitively against any canon name or alias.",
+  "entities": [
+    {"name": "Iska Vale", "aliases": ["Iska"], "type": "pc", "party_from": 0},
+    {"name": "Dorran Holt", "aliases": ["Dorran"], "type": "pc", "party_from": 0},
+    {"name": "Sefa Quill", "aliases": ["Sefa"], "type": "pc", "party_from": 0},
+    {"name": "Saltmere", "type": "place", "party_from": 1},
+    {"name": "Oswin Pell", "aliases": ["Harbormaster Oswin Pell", "Oswin"], "type": "npc", "party_from": 1},
+    {"name": "Elsabet", "type": "npc", "party_from": 1},
+    {"name": "Drowned Lantern", "aliases": ["The Drowned Lantern"], "type": "place", "party_from": 1},
+    {"name": "Bettany Crane", "type": "npc", "party_from": 1},
+    {"name": "Greywatch Lighthouse", "type": "place", "party_from": 1},
+    {"name": "Order of the Pale Tide", "aliases": ["Pale Tide"], "type": "faction", "party_from": null},
+    {"name": "Lady Maren Ashcombe", "aliases": ["Maren Ashcombe", "Maren"], "type": "npc", "party_from": 3},
+    {"name": "Sunken Key", "aliases": ["The Sunken Key"], "type": "item", "party_from": 2},
+    {"name": "Rhosyn Dace", "aliases": ["Captain Rhosyn Dace", "Rhosyn"], "type": "npc", "party_from": 2},
+    {"name": "Tidebound", "aliases": ["The Tidebound"], "type": "faction", "party_from": 2},
+    {"name": "Ashcombe Manor", "type": "place", "party_from": 3},
+    {"name": "Brother Aldric", "aliases": ["Aldric"], "type": "npc", "party_from": 3},
+    {"name": "Thornwood", "aliases": ["The Thornwood"], "type": "place", "party_from": 4}
+  ],
+  "facts": [
+    {"entity": "Oswin Pell", "session": 1, "contains": ["52"], "visibility": "party"},
+    {"entity": "Oswin Pell", "session": 1, "contains": ["Elsabet"], "visibility": "party"},
+    {"entity": "Oswin Pell", "session": 1, "contains": ["eleven"], "visibility": "party"},
+    {"entity": "Bettany Crane", "session": 1, "contains": ["innkeeper"], "visibility": "party"},
+    {"entity": "Greywatch Lighthouse", "session": 1, "contains": ["lights"], "visibility": "party"},
+    {"entity": "Order of the Pale Tide", "session": 1, "contains": ["fishermen"], "visibility": "gm"},
+    {"entity": "Lady Maren Ashcombe", "session": 1, "contains": ["leads"], "visibility": "gm"},
+    {"entity": "Bettany Crane", "session": 1, "contains": ["brother"], "visibility": "gm"},
+    {"entity": "Sunken Key", "session": 2, "contains": ["lens"], "visibility": "party"},
+    {"entity": "Sunken Key", "session": 2, "contains": ["two hundred"], "visibility": "party"},
+    {"entity": "Rhosyn Dace", "session": 2, "contains": ["Tidebound"], "visibility": "party"},
+    {"entity": "Lady Maren Ashcombe", "session": 2, "contains": ["disguise"], "visibility": "gm"},
+    {"entity": "Sunken Key", "session": 2, "contains": ["sea vault"], "visibility": "gm"},
+    {"entity": "Lady Maren Ashcombe", "session": 3, "contains": ["seawall"], "visibility": "party"},
+    {"entity": "Lady Maren Ashcombe", "session": 3, "contains": ["five hundred"], "visibility": "party"},
+    {"entity": "Oswin Pell", "session": 3, "contains": ["Mirelle"], "visibility": "party"},
+    {"entity": "Brother Aldric", "session": 3, "contains": ["warned"], "visibility": "party"},
+    {"entity": "Brother Aldric", "session": 3, "contains": ["Pale Tide"], "visibility": "gm"},
+    {"entity": "Sunken Key", "session": 3, "contains": ["below the light"], "visibility": "party"},
+    {"entity": "Thornwood", "session": 4, "contains": ["fishermen"], "visibility": "party"},
+    {"entity": "Brother Aldric", "session": 4, "contains": ["killed"], "visibility": "party"},
+    {"entity": "Rhosyn Dace", "session": 4, "contains": ["debt"], "visibility": "gm"},
+    {"entity": "Brother Aldric", "session": 5, "contains": ["alive"], "visibility": "party"},
+    {"entity": "Oswin Pell", "session": 5, "contains": ["60"], "visibility": "party"},
+    {"entity": "Tidebound", "session": 5, "contains": ["boat"], "visibility": "party"},
+    {"entity": "Bettany Crane", "session": 5, "contains": ["brother"], "visibility": "party"}
+  ],
+  "contradictions": [
+    {"session": 3, "entity": "Oswin Pell", "new_contains": "Mirelle", "existing_contains": "Elsabet"},
+    {"session": 5, "entity": "Brother Aldric", "new_contains": "alive", "existing_contains": "killed"},
+    {"session": 5, "entity": "Oswin Pell", "new_contains": "60", "existing_contains": "52"}
+  ],
+  "secrets": {
+    "markers": ["Pale Tide", "sea vault", "new moon", "gambling debt", "in disguise", "left it in shame"],
+    "identities": [
+      {"names": ["Maren"], "forbidden": ["hooded"]}
+    ]
+  },
+  "thresholds": {
+    "mock": {
+      "entity_recall": 0.9,
+      "fact_recall": 0.6,
+      "contradiction_recall": 1.0,
+      "max_false_alarms_per_session": 1,
+      "max_wrong_merges": 0,
+      "max_secret_leaks": 0
+    },
+    "aws": {
+      "entity_recall": 0.9,
+      "fact_recall": 0.85,
+      "contradiction_recall": 0.66,
+      "max_false_alarms_per_session": 1,
+      "max_wrong_merges": 0,
+      "max_secret_leaks": 0
+    }
+  }
+}

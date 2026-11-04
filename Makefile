@@ -84,7 +84,7 @@ migrate-status: db-up ## Show applied and pending migrations
 ##@ Quality
 
 .PHONY: check
-check: lint test gen-check build ## Everything CI should run
+check: lint test eval gen-check build ## Everything CI should run
 
 .PHONY: lint
 lint: lint-go lint-web ## Lint and type-check backend and frontend
@@ -107,6 +107,14 @@ test-go: db-up
 .PHONY: test-web
 test-web:
 	cd frontend && pnpm -s test
+
+.PHONY: eval
+eval: ## Score the canon pipeline on the eval campaign (PROVIDER=aws for real Bedrock)
+	cd backend && go run ./cmd/eval
+
+.PHONY: canon-run
+canon-run: ## Run the pipeline on the eval campaign and write results to data/canon-run
+	cd backend && go run ./cmd/canon -out ../data/canon-run
 
 .PHONY: gen
 gen: ## Regenerate frontend API types from api/openapi.yaml

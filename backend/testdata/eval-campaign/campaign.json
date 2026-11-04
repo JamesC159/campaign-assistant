@@ -1,0 +1,8 @@
+{
+  "name": "The Lantern Coast",
+  "party": [
+    {"name": "Iska Vale", "aliases": ["Iska"]},
+    {"name": "Dorran Holt", "aliases": ["Dorran"]},
+    {"name": "Sefa Quill", "aliases": ["Sefa"]}
+  ]
+}
