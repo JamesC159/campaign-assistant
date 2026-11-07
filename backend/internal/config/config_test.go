@@ -36,12 +36,18 @@ func TestLoadOverrides(t *testing.T) {
 		"PROVIDER":             "aws",
 		"BEDROCK_MODEL_STRONG": "strong-id",
 		"BEDROCK_MODEL_FAST":   "fast-id",
+		"MAIL_FROM":            "gm@example.com",
+		"APP_URL":              "https://app.example.com",
+		"WORKER_CONCURRENCY":   "8",
 		"DATABASE_URL":         "postgres://x",
 		"LOG_LEVEL":            "debug",
 		"SHUTDOWN_TIMEOUT":     "3s",
 	}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.WorkerConcurrency != 8 || cfg.MailFrom != "gm@example.com" || cfg.DBAppRole != "campaign_app" {
+		t.Errorf("worker/mail/db settings not loaded: %+v", cfg)
 	}
 	if cfg.BedrockStrongModel != "strong-id" || cfg.BedrockFastModel != "fast-id" || cfg.BedrockEmbedModel == "" {
 		t.Errorf("bedrock models not loaded: %+v", cfg)
@@ -59,7 +65,11 @@ func TestLoadRejectsInvalid(t *testing.T) {
 		"bad env":          {map[string]string{"APP_ENV": "staging"}, "APP_ENV"},
 		"bad provider":     {map[string]string{"PROVIDER": "gcp"}, "PROVIDER"},
 		"mock in prod":     {map[string]string{"APP_ENV": "prod", "DATABASE_URL": "postgres://x"}, "not allowed"},
-		"prod needs db":    {map[string]string{"APP_ENV": "prod", "PROVIDER": "aws", "BEDROCK_MODEL_STRONG": "s", "BEDROCK_MODEL_FAST": "f"}, "DATABASE_URL"},
+		"prod needs db":    {map[string]string{"APP_ENV": "prod", "PROVIDER": "aws", "BEDROCK_MODEL_STRONG": "s", "BEDROCK_MODEL_FAST": "f", "MAIL_FROM": "a@b.c", "APP_URL": "https://x.test"}, "DATABASE_URL"},
+		"prod needs https": {map[string]string{"APP_ENV": "prod", "APP_URL": "http://x.test"}, "https"},
+		"bad app url":      {map[string]string{"APP_URL": "localhost:5173"}, "APP_URL"},
+		"bad concurrency":  {map[string]string{"WORKER_CONCURRENCY": "0"}, "WORKER_CONCURRENCY"},
+		"aws needs from":   {map[string]string{"PROVIDER": "aws", "BEDROCK_MODEL_STRONG": "s", "BEDROCK_MODEL_FAST": "f"}, "MAIL_FROM"},
 		"aws needs models": {map[string]string{"PROVIDER": "aws"}, "BEDROCK_MODEL_STRONG is required"},
 		"bad log level":    {map[string]string{"LOG_LEVEL": "loud"}, "LOG_LEVEL"},
 		"bad shutdown":     {map[string]string{"SHUTDOWN_TIMEOUT": "soon"}, "SHUTDOWN_TIMEOUT"},

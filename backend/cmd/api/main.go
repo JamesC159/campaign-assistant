@@ -11,10 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"campaign-assistant/backend/internal/app"
+	"campaign-assistant/backend/internal/auth"
 	"campaign-assistant/backend/internal/config"
-	"campaign-assistant/backend/internal/db"
 	"campaign-assistant/backend/internal/httpapi"
 	"campaign-assistant/backend/internal/logging"
+	"campaign-assistant/backend/internal/notify"
+	"campaign-assistant/backend/internal/providers"
+	"campaign-assistant/backend/internal/store"
 	"campaign-assistant/backend/internal/version"
 )
 
@@ -35,15 +39,19 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := db.Open(ctx, cfg.DatabaseURL)
+	pool, err := app.OpenDB(ctx, cfg, log)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
-		// Keep serving: /readyz and /api/health report the outage, and the pool reconnects.
-		log.Warn("database not reachable at startup", "err", err)
+
+	sender, mailbox, err := providers.Mail(ctx, cfg, log)
+	if err != nil {
+		return err
 	}
+	st := store.New(pool)
+	broker := &notify.Broker{Pool: pool, Log: log}
+	go broker.Run(ctx)
 
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
@@ -53,11 +61,14 @@ func run() error {
 			Env:      cfg.Env,
 			Provider: cfg.Provider,
 			Version:  version.Version,
+			Store:    st,
+			Auth:     &auth.Service{Store: st, Mail: sender, Log: log, Params: auth.DefaultParams, AppURL: cfg.AppURL},
+			Events:   broker,
+			Mailbox:  mailbox,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		// WriteTimeout is server-wide; long-lived SSE routes (week 3) will clear their own
-		// deadline with http.ResponseController.SetWriteDeadline.
+		// Server-wide; the SSE endpoint clears its own deadline.
 		WriteTimeout:   30 * time.Second,
 		IdleTimeout:    2 * time.Minute,
 		MaxHeaderBytes: 64 << 10,

@@ -1,60 +1,354 @@
 openapi: 3.1.0
 info:
   title: Campaign Assistant API
-  version: 0.1.0
+  version: 0.3.0
   description: |
     Contract between the Go backend and the React frontend.
     Frontend types are generated from this file (`make gen`); Go response
     structs mirror it by hand and are covered by handler tests.
+
+    Authentication is a `ca_session` cookie (HttpOnly, SameSite=Lax) set by
+    signup, login and magic-link verification. Mutating requests must send
+    JSON with `Content-Type: application/json`; cross-site browser requests
+    are rejected. Errors always use the `Error` schema.
+
+    Visibility is enforced by the database (row-level security): GMs and
+    players call the same endpoints and receive different data.
 servers:
   - url: /
+tags:
+  - name: system
+  - name: auth
+  - name: campaigns
+  - name: sessions
 paths:
   /api/health:
     get:
+      tags: [system]
       operationId: getHealth
       summary: Service and dependency health
       description: Returns 200 when every dependency is up, 503 (same body) when degraded.
       responses:
+        "200": { description: Healthy, content: { application/json: { schema: { $ref: "#/components/schemas/Health" } } } }
+        "503": { description: One or more dependencies are down, content: { application/json: { schema: { $ref: "#/components/schemas/Health" } } } }
+
+  /api/auth/signup:
+    post:
+      tags: [auth]
+      operationId: signup
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Credentials" } } } }
+      responses:
+        "201": { description: Account created and signed in, content: { application/json: { schema: { $ref: "#/components/schemas/UserResponse" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Credentials" } } } }
+      responses:
+        "200": { description: Signed in, content: { application/json: { schema: { $ref: "#/components/schemas/UserResponse" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      responses:
+        "204": { description: Signed out }
+  /api/auth/magic-link:
+    post:
+      tags: [auth]
+      operationId: sendMagicLink
+      description: Emails a one-time sign-in link (creating a passwordless account if needed). The response is the same whether or not the account existed.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [email], additionalProperties: false, properties: { email: { type: string, format: email } } } } }
+      responses:
+        "202": { description: Link sent }
+        "400": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/auth/magic-link/verify:
+    post:
+      tags: [auth]
+      operationId: verifyMagicLink
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [token], additionalProperties: false, properties: { token: { type: string } } } } }
+      responses:
+        "200": { description: Signed in, content: { application/json: { schema: { $ref: "#/components/schemas/UserResponse" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      responses:
+        "200": { description: The signed-in user, content: { application/json: { schema: { $ref: "#/components/schemas/UserResponse" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/campaigns:
+    get:
+      tags: [campaigns]
+      operationId: listCampaigns
+      responses:
         "200":
-          description: Healthy
+          description: Campaigns you belong to
+          content: { application/json: { schema: { type: object, required: [campaigns], properties: { campaigns: { type: array, items: { $ref: "#/components/schemas/Campaign" } } } } } }
+    post:
+      tags: [campaigns]
+      operationId: createCampaign
+      description: Creates a campaign with you as owner and GM. Player characters in `party` are known to everyone from the start.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 200 }
+                party: { type: array, maxItems: 12, items: { $ref: "#/components/schemas/PartyMember" } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Campaign" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+  /api/campaigns/{campaign}:
+    parameters: [{ $ref: "#/components/parameters/CampaignID" }]
+    get:
+      tags: [campaigns]
+      operationId: getCampaign
+      responses:
+        "200":
+          description: Campaign and members
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Health" }
-        "503":
-          description: One or more dependencies are down
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Campaign"
+                  - type: object
+                    required: [members]
+                    properties: { members: { type: array, items: { $ref: "#/components/schemas/Member" } } }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [campaigns]
+      operationId: renameCampaign
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [name], additionalProperties: false, properties: { name: { type: string } } } } }
+      responses:
+        "200": { description: Renamed }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [campaigns]
+      operationId: deleteCampaign
+      description: Owner only.
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/campaigns/{campaign}/members:
+    parameters: [{ $ref: "#/components/parameters/CampaignID" }]
+    post:
+      tags: [campaigns]
+      operationId: addMember
+      description: GM only. The person must already have an account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              additionalProperties: false
+              properties:
+                email: { type: string, format: email }
+                role: { $ref: "#/components/schemas/Role" }
+      responses:
+        "201": { description: Added, content: { application/json: { schema: { $ref: "#/components/schemas/Member" } } } }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/campaigns/{campaign}/members/{user}:
+    parameters:
+      - { $ref: "#/components/parameters/CampaignID" }
+      - { name: user, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [campaigns]
+      operationId: removeMember
+      responses:
+        "204": { description: Removed }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/campaigns/{campaign}/canon:
+    parameters: [{ $ref: "#/components/parameters/CampaignID" }]
+    get:
+      tags: [campaigns]
+      operationId: getCanon
+      description: Approved canon. GMs get everything; players get only party-visible names and facts (no descriptions).
+      responses:
+        "200":
+          description: Canon as visible to you
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Health" }
+              schema:
+                type: object
+                required: [role, canon]
+                properties:
+                  role: { $ref: "#/components/schemas/Role" }
+                  canon: { $ref: "#/components/schemas/Canon" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/campaigns/{campaign}/recaps:
+    parameters: [{ $ref: "#/components/parameters/CampaignID" }]
+    get:
+      tags: [campaigns]
+      operationId: listPartyRecaps
+      description: Published player recaps, oldest first.
+      responses:
+        "200":
+          description: Recaps
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recaps]
+                properties:
+                  recaps:
+                    type: array
+                    items:
+                      type: object
+                      required: [session_id, number, body]
+                      properties:
+                        session_id: { type: string, format: uuid }
+                        number: { type: integer }
+                        body: { type: string }
+  /api/campaigns/{campaign}/sessions:
+    parameters: [{ $ref: "#/components/parameters/CampaignID" }]
+    get:
+      tags: [sessions]
+      operationId: listSessions
+      description: GM only.
+      responses:
+        "200":
+          description: Sessions
+          content: { application/json: { schema: { type: object, required: [sessions], properties: { sessions: { type: array, items: { $ref: "#/components/schemas/Session" } } } } } }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [sessions]
+      operationId: createSession
+      description: GM only. Stores the notes and queues processing; follow progress with the events stream.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              additionalProperties: false
+              properties:
+                notes: { type: string, minLength: 1, maxLength: 500000, description: "Markdown. Text under a '## GM only' heading, or starting 'GM:' / 'Secret:', is GM-only." }
+                number: { type: integer, minimum: 1, description: Defaults to the next number. }
+                played_on: { type: string, format: date }
+      responses:
+        "202": { description: Queued, content: { application/json: { schema: { $ref: "#/components/schemas/Session" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/sessions/{session}:
+    parameters: [{ $ref: "#/components/parameters/SessionID" }]
+    get:
+      tags: [sessions]
+      operationId: getSession
+      description: GM only. Includes the raw notes and both recaps.
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [session, recaps]
+                properties:
+                  session: { $ref: "#/components/schemas/Session" }
+                  recaps: { type: array, items: { $ref: "#/components/schemas/Recap" } }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/sessions/{session}/proposal:
+    parameters: [{ $ref: "#/components/parameters/SessionID" }]
+    get:
+      tags: [sessions]
+      operationId: getProposal
+      description: GM only. The pipeline's output awaiting approval. `stale` means canon changed since it was computed.
+      responses:
+        "200":
+          description: Proposal
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [canon_version, current_canon_version, stale, proposal]
+                properties:
+                  canon_version: { type: integer }
+                  current_canon_version: { type: integer }
+                  stale: { type: boolean }
+                  proposal: { $ref: "#/components/schemas/Proposal" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/sessions/{session}/approve:
+    parameters: [{ $ref: "#/components/parameters/SessionID" }]
+    post:
+      tags: [sessions]
+      operationId: approveSession
+      description: |
+        GM only. Approves the whole proposal into canon and publishes the player recap.
+        409 codes: `not_ready` (not in review), `approve_in_order` (an earlier session is unapproved),
+        `stale_proposal` (canon changed; the session was re-queued).
+      responses:
+        "200": { description: Approved, content: { application/json: { schema: { $ref: "#/components/schemas/Session" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/sessions/{session}/reprocess:
+    parameters: [{ $ref: "#/components/parameters/SessionID" }]
+    post:
+      tags: [sessions]
+      operationId: reprocessSession
+      description: GM only. Re-runs the pipeline for a session in review or failed.
+      responses:
+        "202": { description: Queued, content: { application/json: { schema: { $ref: "#/components/schemas/Session" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/sessions/{session}/events:
+    parameters: [{ $ref: "#/components/parameters/SessionID" }]
+    get:
+      tags: [sessions]
+      operationId: streamSessionEvents
+      description: |
+        Server-Sent Events. Each `status` event's data is a SessionEvent. The current status is
+        sent first; the stream closes after `review`, `approved` or `failed`.
+      responses:
+        "200": { description: Event stream, content: { text/event-stream: { schema: { type: string } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
 components:
+  parameters:
+    CampaignID: { name: campaign, in: path, required: true, schema: { type: string, format: uuid } }
+    SessionID: { name: session, in: path, required: true, schema: { type: string, format: uuid } }
+  responses:
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   schemas:
     Health:
       type: object
       required: [status, version, env, provider, database]
       properties:
-        status:
-          type: string
-          enum: [ok, degraded]
-        version:
-          type: string
-        env:
-          type: string
-          enum: [dev, prod]
-        provider:
-          type: string
-          enum: [mock, aws]
-          description: Whether external services are real AWS clients or local mocks.
-        database:
-          $ref: "#/components/schemas/ComponentHealth"
+        status: { type: string, enum: [ok, degraded] }
+        version: { type: string }
+        env: { type: string, enum: [dev, prod] }
+        provider: { type: string, enum: [mock, aws], description: Whether external services are real AWS clients or local mocks. }
+        database: { $ref: "#/components/schemas/ComponentHealth" }
     ComponentHealth:
       type: object
       required: [status, latency_ms]
       properties:
-        status:
-          type: string
-          enum: [up, down]
-        latency_ms:
-          type: integer
-          format: int64
+        status: { type: string, enum: [up, down] }
+        latency_ms: { type: integer, format: int64 }
     Error:
       type: object
       required: [error]
@@ -63,8 +357,176 @@ components:
           type: object
           required: [code, message]
           properties:
-            code:
-              type: string
-              description: Stable machine-readable code, e.g. not_found
-            message:
-              type: string
+            code: { type: string, description: "Stable machine-readable code, e.g. not_found" }
+            message: { type: string }
+    Credentials:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 10, maxLength: 256 }
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+    UserResponse:
+      type: object
+      required: [user]
+      properties: { user: { $ref: "#/components/schemas/User" } }
+    Role: { type: string, enum: [gm, player] }
+    Campaign:
+      type: object
+      required: [id, name, owner_id, role, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        owner_id: { type: string, format: uuid }
+        role: { $ref: "#/components/schemas/Role" }
+        created_at: { type: string, format: date-time }
+    Member:
+      type: object
+      required: [user_id, email, role, created_at]
+      properties:
+        user_id: { type: string, format: uuid }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        created_at: { type: string, format: date-time }
+    PartyMember:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        aliases: { type: array, maxItems: 10, items: { type: string } }
+    SessionStatus: { type: string, enum: [queued, processing, review, approved, failed] }
+    Session:
+      type: object
+      required: [id, campaign_id, number, played_on, status, error, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        campaign_id: { type: string, format: uuid }
+        number: { type: integer }
+        played_on: { type: [string, "null"], format: date }
+        status: { $ref: "#/components/schemas/SessionStatus" }
+        error: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        notes: { type: string, description: Only in session detail. }
+    SessionEvent:
+      type: object
+      required: [campaign_id, session_id, status]
+      properties:
+        campaign_id: { type: string, format: uuid }
+        session_id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/SessionStatus" }
+        error: { type: string }
+    Recap:
+      type: object
+      required: [audience, body, published]
+      properties:
+        audience: { type: string, enum: [gm, party] }
+        body: { type: string }
+        published: { type: boolean }
+    Visibility: { type: string, enum: [gm, party] }
+    EntityType: { type: string, enum: [npc, pc, place, faction, item, thread] }
+    Name:
+      type: object
+      required: [text, visibility]
+      properties:
+        text: { type: string }
+        visibility: { $ref: "#/components/schemas/Visibility" }
+    Entity:
+      type: object
+      required: [id, type, names, first_seen]
+      properties:
+        id: { type: string }
+        type: { $ref: "#/components/schemas/EntityType" }
+        names: { type: array, items: { $ref: "#/components/schemas/Name" }, description: "names[0] is the canonical name" }
+        description: { type: string, description: GM only. }
+        first_seen: { type: integer }
+    Fact:
+      type: object
+      required: [id, entity_id, statement, quote, session, visibility, prompt_version]
+      properties:
+        id: { type: string }
+        entity_id: { type: string }
+        statement: { type: string }
+        quote: { type: string, description: Verbatim from the session notes. }
+        session: { type: integer }
+        visibility: { $ref: "#/components/schemas/Visibility" }
+        prompt_version: { type: integer }
+    Canon:
+      type: object
+      required: [entities, facts]
+      properties:
+        entities: { type: array, items: { $ref: "#/components/schemas/Entity" } }
+        facts: { type: array, items: { $ref: "#/components/schemas/Fact" } }
+    Proposal:
+      type: object
+      description: Pipeline output for one session (see backend/internal/canon.Proposal).
+      required: [session, entities, facts, contradictions, reviews, recap_gm, recap_party, recap_party_fallback, stats, usage]
+      properties:
+        session: { type: integer }
+        entities:
+          type: array
+          items:
+            type: object
+            required: [ref, new, type, names]
+            properties:
+              ref: { type: string, description: "Existing entity id, or new:N" }
+              new: { type: boolean }
+              type: { $ref: "#/components/schemas/EntityType" }
+              names: { type: array, items: { $ref: "#/components/schemas/Name" } }
+              description: { type: string }
+              match:
+                type: object
+                properties:
+                  method: { type: string, enum: [exact, embedding, model] }
+                  score: { type: number }
+                  extracted_name: { type: string }
+                  confidence: { type: string }
+        facts:
+          type: array
+          items:
+            type: object
+            required: [entity_ref, statement, quote, visibility, paragraph]
+            properties:
+              entity_ref: { type: string }
+              statement: { type: string }
+              quote: { type: string }
+              visibility: { $ref: "#/components/schemas/Visibility" }
+              paragraph: { type: integer }
+        contradictions:
+          type: array
+          items:
+            type: object
+            required: [fact_index, existing_fact_id, explanation]
+            properties:
+              fact_index: { type: integer }
+              existing_fact_id: { type: string }
+              explanation: { type: string }
+        reviews:
+          type: array
+          items:
+            type: object
+            required: [kind, message]
+            properties:
+              kind: { type: string, enum: [uncertain_match, unnamed_for_party, possible_secret_identity] }
+              message: { type: string }
+              entity_ref: { type: string }
+        recap_gm: { type: string }
+        recap_party: { type: string }
+        recap_party_fallback: { type: boolean }
+        stats: { type: object, additionalProperties: { type: integer } }
+        usage:
+          type: object
+          additionalProperties:
+            type: object
+            required: [calls, input_tokens, output_tokens]
+            properties:
+              calls: { type: integer }
+              input_tokens: { type: integer }
+              output_tokens: { type: integer }

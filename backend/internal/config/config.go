@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -41,6 +43,16 @@ type Config struct {
 	BedrockStrongModel string
 	BedrockFastModel   string
 	BedrockEmbedModel  string
+
+	// AppURL is the public URL of the web app, used in emailed links.
+	AppURL string
+	// MailFrom is the sender address (must be SES-verified when PROVIDER=aws).
+	MailFrom string
+	// DBAppRole is the restricted role the API and worker SET ROLE to, so
+	// row-level security applies. Empty disables SET ROLE (only for a login
+	// that is already that role).
+	DBAppRole         string
+	WorkerConcurrency int
 }
 
 // defaultDatabaseURL matches docker-compose.yml. Dev-only: prod must set DATABASE_URL (enforced in Load).
@@ -69,6 +81,11 @@ func Load(getenv func(string) string) (Config, error) {
 		BedrockStrongModel: get("BEDROCK_MODEL_STRONG", ""),
 		BedrockFastModel:   get("BEDROCK_MODEL_FAST", ""),
 		BedrockEmbedModel:  get("BEDROCK_MODEL_EMBED", "amazon.titan-embed-text-v2:0"),
+
+		AppURL:            get("APP_URL", "http://127.0.0.1:5173"),
+		MailFrom:          get("MAIL_FROM", "Campaign Assistant <no-reply@localhost>"),
+		DBAppRole:         get("DB_APP_ROLE", "campaign_app"),
+		WorkerConcurrency: 2,
 	}
 
 	switch cfg.Env {
@@ -101,6 +118,23 @@ func Load(getenv func(string) string) (Config, error) {
 
 	if err := cfg.LogLevel.UnmarshalText([]byte(get("LOG_LEVEL", "info"))); err != nil {
 		errs = append(errs, fmt.Errorf("LOG_LEVEL: %w", err))
+	}
+
+	if v := getenv("WORKER_CONCURRENCY"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > 64 {
+			errs = append(errs, fmt.Errorf("WORKER_CONCURRENCY must be 1-64, got %q", v))
+		} else {
+			cfg.WorkerConcurrency = n
+		}
+	}
+	if u, err := url.Parse(cfg.AppURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		errs = append(errs, fmt.Errorf("APP_URL must be an absolute http(s) URL, got %q", cfg.AppURL))
+	} else if cfg.Env == EnvProd && u.Scheme != "https" {
+		errs = append(errs, errors.New("APP_URL must use https when APP_ENV=prod"))
+	}
+	if cfg.Provider == ProviderAWS && getenv("MAIL_FROM") == "" {
+		errs = append(errs, errors.New("MAIL_FROM (an SES-verified address) is required when PROVIDER=aws"))
 	}
 
 	if d := getenv("SHUTDOWN_TIMEOUT"); d != "" {
