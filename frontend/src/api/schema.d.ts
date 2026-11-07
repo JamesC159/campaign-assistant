@@ -24,6 +24,337 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["signup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/magic-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Emails a one-time sign-in link (creating a passwordless account if needed). The response is the same whether or not the account existed. */
+        post: operations["sendMagicLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/magic-link/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verifyMagicLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listCampaigns"];
+        put?: never;
+        /** @description Creates a campaign with you as owner and GM. Player characters in `party` are known to everyone from the start. */
+        post: operations["createCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaign}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        get: operations["getCampaign"];
+        put?: never;
+        post?: never;
+        /** @description Owner only. */
+        delete: operations["deleteCampaign"];
+        options?: never;
+        head?: never;
+        patch: operations["renameCampaign"];
+        trace?: never;
+    };
+    "/api/campaigns/{campaign}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description GM only. The person must already have an account. */
+        post: operations["addMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaign}/members/{user}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+                user: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaign}/canon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        /** @description Approved canon. GMs get everything; players get only party-visible names and facts (no descriptions). */
+        get: operations["getCanon"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaign}/recaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        /** @description Published player recaps, oldest first. */
+        get: operations["listPartyRecaps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaign}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        /** @description GM only. */
+        get: operations["listSessions"];
+        put?: never;
+        /** @description GM only. Stores the notes and queues processing; follow progress with the events stream. */
+        post: operations["createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{session}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        /** @description GM only. Includes the raw notes and both recaps. */
+        get: operations["getSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{session}/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        /** @description GM only. The pipeline's output awaiting approval. `stale` means canon changed since it was computed. */
+        get: operations["getProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{session}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description GM only. Approves the whole proposal into canon and publishes the player recap.
+         *     409 codes: `not_ready` (not in review), `approve_in_order` (an earlier session is unapproved),
+         *     `stale_proposal` (canon changed; the session was re-queued).
+         */
+        post: operations["approveSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{session}/reprocess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description GM only. Re-runs the pipeline for a session in review or failed. */
+        post: operations["reprocessSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{session}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * @description Server-Sent Events. Each `status` event's data is a SessionEvent. The current status is
+         *     sent first; the stream closes after `review`, `approved` or `failed`.
+         */
+        get: operations["streamSessionEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -54,9 +385,174 @@ export interface components {
                 message: string;
             };
         };
+        Credentials: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        User: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+        };
+        UserResponse: {
+            user: components["schemas"]["User"];
+        };
+        /** @enum {string} */
+        Role: "gm" | "player";
+        Campaign: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: uuid */
+            owner_id: string;
+            role: components["schemas"]["Role"];
+            /** Format: date-time */
+            created_at: string;
+        };
+        Member: {
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            role: components["schemas"]["Role"];
+            /** Format: date-time */
+            created_at: string;
+        };
+        PartyMember: {
+            name: string;
+            aliases?: string[];
+        };
+        /** @enum {string} */
+        SessionStatus: "queued" | "processing" | "review" | "approved" | "failed";
+        Session: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            campaign_id: string;
+            number: number;
+            /** Format: date */
+            played_on: string | null;
+            status: components["schemas"]["SessionStatus"];
+            error: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** @description Only in session detail. */
+            notes?: string;
+        };
+        SessionEvent: {
+            /** Format: uuid */
+            campaign_id: string;
+            /** Format: uuid */
+            session_id: string;
+            status: components["schemas"]["SessionStatus"];
+            error?: string;
+        };
+        Recap: {
+            /** @enum {string} */
+            audience: "gm" | "party";
+            body: string;
+            published: boolean;
+        };
+        /** @enum {string} */
+        Visibility: "gm" | "party";
+        /** @enum {string} */
+        EntityType: "npc" | "pc" | "place" | "faction" | "item" | "thread";
+        Name: {
+            text: string;
+            visibility: components["schemas"]["Visibility"];
+        };
+        Entity: {
+            id: string;
+            type: components["schemas"]["EntityType"];
+            /** @description names[0] is the canonical name */
+            names: components["schemas"]["Name"][];
+            /** @description GM only. */
+            description?: string;
+            first_seen: number;
+        };
+        Fact: {
+            id: string;
+            entity_id: string;
+            statement: string;
+            /** @description Verbatim from the session notes. */
+            quote: string;
+            session: number;
+            visibility: components["schemas"]["Visibility"];
+            prompt_version: number;
+        };
+        Canon: {
+            entities: components["schemas"]["Entity"][];
+            facts: components["schemas"]["Fact"][];
+        };
+        /** @description Pipeline output for one session (see backend/internal/canon.Proposal). */
+        Proposal: {
+            session: number;
+            entities: {
+                /** @description Existing entity id, or new:N */
+                ref: string;
+                new: boolean;
+                type: components["schemas"]["EntityType"];
+                names: components["schemas"]["Name"][];
+                description?: string;
+                match?: {
+                    /** @enum {string} */
+                    method?: "exact" | "embedding" | "model";
+                    score?: number;
+                    extracted_name?: string;
+                    confidence?: string;
+                };
+            }[];
+            facts: {
+                entity_ref: string;
+                statement: string;
+                quote: string;
+                visibility: components["schemas"]["Visibility"];
+                paragraph: number;
+            }[];
+            contradictions: {
+                fact_index: number;
+                existing_fact_id: string;
+                explanation: string;
+            }[];
+            reviews: {
+                /** @enum {string} */
+                kind: "uncertain_match" | "unnamed_for_party" | "possible_secret_identity";
+                message: string;
+                entity_ref?: string;
+            }[];
+            recap_gm: string;
+            recap_party: string;
+            recap_party_fallback: boolean;
+            stats: {
+                [key: string]: number;
+            };
+            usage: {
+                [key: string]: {
+                    calls: number;
+                    input_tokens: number;
+                    output_tokens: number;
+                };
+            };
+        };
     };
-    responses: never;
-    parameters: never;
+    responses: {
+        /** @description Error */
+        Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+    };
+    parameters: {
+        CampaignID: string;
+        SessionID: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -90,6 +586,571 @@ export interface operations {
                     "application/json": components["schemas"]["Health"];
                 };
             };
+        };
+    };
+    signup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Credentials"];
+            };
+        };
+        responses: {
+            /** @description Account created and signed in */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Credentials"];
+            };
+        };
+        responses: {
+            /** @description Signed in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed out */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sendMagicLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Link sent */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    verifyMagicLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Signed in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The signed-in user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    listCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaigns you belong to */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        campaigns: components["schemas"]["Campaign"][];
+                    };
+                };
+            };
+        };
+    };
+    createCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    party?: components["schemas"]["PartyMember"][];
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    getCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign and members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"] & {
+                        members: components["schemas"]["Member"][];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    deleteCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    renameCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Renamed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    addMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    role: components["schemas"]["Role"];
+                };
+            };
+        };
+        responses: {
+            /** @description Added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+                user: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getCanon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canon as visible to you */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        role: components["schemas"]["Role"];
+                        canon: components["schemas"]["Canon"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    listPartyRecaps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recaps */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        recaps: {
+                            /** Format: uuid */
+                            session_id: string;
+                            number: number;
+                            body: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    listSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sessions: components["schemas"]["Session"][];
+                    };
+                };
+            };
+            403: components["responses"]["Error"];
+        };
+    };
+    createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign: components["parameters"]["CampaignID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Markdown. Text under a '## GM only' heading, or starting 'GM:' / 'Secret:', is GM-only. */
+                    notes: string;
+                    /** @description Defaults to the next number. */
+                    number?: number;
+                    /** Format: date */
+                    played_on?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            400: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        session: components["schemas"]["Session"];
+                        recaps: components["schemas"]["Recap"][];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    getProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Proposal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        canon_version: number;
+                        current_canon_version: number;
+                        stale: boolean;
+                        proposal: components["schemas"]["Proposal"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    approveSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    reprocessSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            409: components["responses"]["Error"];
+        };
+    };
+    streamSessionEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Event stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            404: components["responses"]["Error"];
         };
     };
 }

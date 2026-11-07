@@ -4,15 +4,18 @@ package providers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 
 	"campaign-assistant/backend/internal/canon"
 	"campaign-assistant/backend/internal/config"
 	"campaign-assistant/backend/internal/embed"
 	"campaign-assistant/backend/internal/llm"
+	"campaign-assistant/backend/internal/mail"
 )
 
 // AI is the model and embedder pair the pipeline needs.
@@ -44,6 +47,20 @@ func New(ctx context.Context, cfg config.Config) (AI, error) {
 	default:
 		return AI{}, fmt.Errorf("unknown provider %q", cfg.Provider)
 	}
+}
+
+// Mail returns the email sender: an in-memory mailbox for PROVIDER=mock
+// (returned too, so dev builds can show it at /dev/mailbox) or SES for PROVIDER=aws.
+func Mail(ctx context.Context, cfg config.Config, log *slog.Logger) (mail.Sender, *mail.Mailbox, error) {
+	if cfg.Provider == config.ProviderMock {
+		box := &mail.Mailbox{Log: log}
+		return box, box, nil
+	}
+	awsCfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(cfg.AWSRegion))
+	if err != nil {
+		return nil, nil, fmt.Errorf("load AWS config: %w", err)
+	}
+	return mail.SES{Client: sesv2.NewFromConfig(awsCfg), From: cfg.MailFrom}, nil, nil
 }
 
 // WithFixtures wraps the model to record responses into recordDir and/or

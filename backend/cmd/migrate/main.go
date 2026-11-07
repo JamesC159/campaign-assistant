@@ -45,7 +45,7 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	pool, err := db.Open(ctx, cfg.DatabaseURL)
+	pool, err := db.Open(ctx, cfg.DatabaseURL, "")
 	if err != nil {
 		return err
 	}
